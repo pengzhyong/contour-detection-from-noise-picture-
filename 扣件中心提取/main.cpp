@@ -4,7 +4,7 @@ using namespace cv;
 using namespace std;
 int main()
 {
-	Mat src = imread("pic/c10.jpg");
+	Mat src = imread("pic/c11.jpg");
 	pyrDown(src, src);
 	//pyrDown(src, src);
 	imshow("src", src);
@@ -43,9 +43,12 @@ int main()
 		}
 	}
 	imshow("sumThresh", can);
+	//imwrite("prof4.jpg",can);
 	vector<Vec3f> circles;
-	HoughCircles(can, circles, HOUGH_GRADIENT, 2, 1,100,160);
-	for (size_t i = 0; i < circles.size(); i++)
+	HoughCircles(can, circles, HOUGH_GRADIENT, 1, 1, 100, 50, 0, 0);
+	//cout << "cirlces[0]: " << circles[0] << endl;
+
+	for (size_t i = 0; i < 1 && i<circles.size(); i++)
 	{
 		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
 		int radius = cvRound(circles[i][2]);
@@ -55,17 +58,25 @@ int main()
 		circle(gray, center, radius, Scalar(255,255,255), 3, 8, 0);
 		std::cout << "radius: " << radius << endl;
 	}
-	HoughCircles(can, circles, HOUGH_GRADIENT, 2, 1, 100, 40, 20, 30);
-	for (size_t i = 0; i < circles.size(); i++)
-	{
-		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-		int radius = cvRound(circles[i][2]);
-		// draw the circle center
-		circle(gray, center, 3, Scalar(255,255,255), -1, 8, 0);
-		// draw the circle outline 
-		circle(gray, center, radius, Scalar(255,255,255), 3, 8, 0);
-		std::cout << "radius: " << radius << endl;
-	}
+	//int bigCricleLfx = circles[0][0] - (int)circles[0][2];
+	//int bigCricleLfy = circles[0][1] - (int)circles[0][2];
+
+	//Mat can1(can, Rect(circles[0][0]-(int)circles[0][2], circles[0][1]-(int)circles[0][2],2* (int)circles[0][2],2*(int)circles[0][2]));
+	//vector<Vec3f> circles1;
+
+	//HoughCircles(can1, circles1, HOUGH_GRADIENT, 2, 1, 100, 30, 20, 30);
+	////cout << "cirlces[1]: " << circles1[0] << endl;
+
+	//for (size_t i = 0; i < circles1.size(); i++)
+	//{
+	//	Point center(cvRound(circles1[i][0])+bigCricleLfx, cvRound(circles1[i][1])+bigCricleLfy);
+	//	int radius = cvRound(circles1[i][2]);
+	//	// draw the circle center
+	//	circle(gray, center, 3, Scalar(255,255,255), -1, 8, 0);
+	//	// draw the circle outline 
+	//	circle(gray, center, radius, Scalar(255,255,255), 3, 8, 0);
+	//	std::cout << "radius: " << radius << endl;
+	//}
 	
 	imshow("HoughCircle", gray);
 	//Mat close_kenerl = (Mat_<uchar>(3, 3) <<
@@ -127,3 +138,80 @@ int main()
 	waitKey(0);
 	return 1;
 }
+
+
+//#include<iostream>  
+//#include<opencv2/opencv.hpp>  
+//#include<vector>  
+//
+//using namespace std;
+//using namespace cv;
+//
+//int g_CannyThred = 180, g_CannyP = 0, g_CannySize = 0, g_HoughThred = 15, g_HoughThick = 9;
+//int g_Blue = 255, g_Green = 255, g_Red = 0;
+//int g_nWay = 0;
+//int g_nHoughLineMax = 10, g_nHoughLineMin = 50;
+//
+//int g_nDp = 0;
+//int g_nMinDist = 5;
+//int g_nMinRadius = 0, g_nMaxRadius = 0;
+//
+//int main()
+//{
+//	//此路径为系统盘里的图片位置路径
+//	Mat srcImage = imread("pic/c9.jpg");
+//
+//	/*Mat srcImage = imread("C:\\Users\\Yao%20Yao\\AppData\\Local\\Temp\\1.jpg");*/
+//	imshow("【原图】", srcImage);
+//
+//	Mat grayImage;
+//	cvtColor(srcImage, grayImage, CV_BGR2GRAY);
+//	GaussianBlur(grayImage, grayImage, Size(9, 9), 2, 2);
+//
+//	Mat cannyImage;
+//	vector<Vec3f> circles;
+//
+//	namedWindow("【滚动条窗口】", 0);
+//	createTrackbar("dp", "【滚动条窗口】", &g_nDp, 100, 0);
+//	createTrackbar("MinDist", "【滚动条窗口】", &g_nMinDist, 100, 0);
+//	createTrackbar("CannyThred", "【滚动条窗口】", &g_CannyThred, 300, 0);
+//	createTrackbar("HoughThred", "【滚动条窗口】", &g_HoughThred, 255, 0);
+//	createTrackbar("Blue", "【滚动条窗口】", &g_Blue, 255, 0);
+//	createTrackbar("Green", "【滚动条窗口】", &g_Green, 255, 0);
+//	createTrackbar("Red", "【滚动条窗口】", &g_Red, 255, 0);
+//	createTrackbar("Bgr/Gray", "【滚动条窗口】", &g_nWay, 1, 0);
+//	createTrackbar("HoughThred", "【滚动条窗口】", &g_HoughThred, 200, 0);
+//	createTrackbar("MinRadius", "【滚动条窗口】", &g_nMinRadius, 100, 0);
+//	createTrackbar("MaxRadius", "【滚动条窗口】", &g_nMaxRadius, 100, 0);
+//	createTrackbar("HoughThick", "【滚动条窗口】", &g_HoughThick, 100, 0);
+//
+//	char key;
+//	Mat dstImage;
+//	while (1)
+//	{
+//		HoughCircles(grayImage, circles, CV_HOUGH_GRADIENT, (double)((g_nDp + 1.5)), (double)g_nMinDist + 1
+//			, (double)g_CannyThred + 1, g_HoughThred + 1);// , g_nMinRadius, g_nMaxRadius);
+//
+//		/*HoughCircles(grayImage, circles, CV_HOUGH_GRADIENT, 1.5, 10, 200, 100, 0, 0);*/
+//
+//		//显示线段  
+//		for (size_t i = 0; i < circles.size(); i++)
+//		{
+//			if (g_nWay)
+//				grayImage.copyTo(dstImage);
+//			else
+//				srcImage.copyTo(dstImage);
+//
+//			circle(dstImage, Point(cvRound(circles[i][0]), cvRound(circles[i][1])), cvRound(circles[i][2])
+//				, Scalar(g_Blue, g_Green, g_Red), g_HoughThick);
+//		}
+//
+//		imshow("【处理后】", dstImage);
+//
+//		key = waitKey(1);
+//		if (key == 27)
+//			break;
+//	}
+//
+//	return 0;
+//}
