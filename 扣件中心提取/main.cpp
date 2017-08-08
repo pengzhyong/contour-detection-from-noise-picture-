@@ -4,7 +4,7 @@ using namespace cv;
 using namespace std;
 int main()
 {
-	Mat src = imread("pic/c11.jpg");
+	Mat src = imread("pic/c8.jpg");
 	pyrDown(src, src);
 	//pyrDown(src, src);
 	imshow("src", src);
@@ -17,35 +17,92 @@ int main()
 
 	//adaptiveThreshold(gray, gray, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 5, 5);
 	Mat can;
+	vector<vector<Point> > contours;
+	//vector<vector<Vec4i> > hierarchy;
 	Canny(gray, can, 50, 100);
-
+	
 	imshow("canny", can);
-	//imshow("thresh", gray);
-	int sumThresh = 255 * 12;
-	for (int i=5;i<gray.rows-5;i++)
+	Mat temp;
+	temp = can.clone();
+	findContours(temp,contours, RETR_CCOMP, CHAIN_APPROX_SIMPLE);
+	Mat hiera(can.size(), can.type(),Scalar(0));
+	drawContours(hiera, contours, -1, Scalar(255), 1);
+	imshow("contours", hiera);
+	vector<vector<Point> > new_contours;
+	int longThresh = 50;
+	double radio = 1.1;
+	for (int i=0;i<contours.size();i++)
 	{
-		uchar* ptr = can.ptr(i);
-		for (int j=5;j<gray.cols-5;j++)
+		int counts = 1;
+		
+		if (contours[i].size() < longThresh)
+			continue;
+		cout << "contours.size: " << contours[i].size() << endl;
+		for (int j=1;j<contours[i].size()-2;j++)
 		{
-			int sum = 0;
-			for (int k=-5;k<6;k++)
+			Point orient;
+			Point prevorient;
+			Point nextorient;
+			orient.x = contours[i][j + 1].x - contours[i][j].x;
+			orient.y = contours[i][j + 1].y - contours[i][j].y;
+			prevorient.x = contours[i][j].x - contours[i][j - 1].x;
+			prevorient.y = contours[i][j].y - contours[i][j - 1].y;
+			nextorient.x = contours[i][j+2].x - contours[i][j+1].x;
+			nextorient.y = contours[i][j+2].y - contours[i][j+1].y;
+			if (((orient.x==prevorient.x && orient.y==prevorient.y)||
+				(orient.x==prevorient.x && abs(orient.y-prevorient.y)==1)||
+				(orient.y == prevorient.y && abs(orient.x - prevorient.x) == 1)) &&
+				((orient.x == nextorient.x && orient.y == nextorient.y) ||
+				(orient.x == nextorient.x && abs(orient.y - nextorient.y) == 1) ||
+					(orient.y == nextorient.y && abs(orient.x - nextorient.x) == 1)))
 			{
-				for (int m=-5;m<6;m++)
-				{
-					sum += *(ptr + k * gray.step + (j + m)*gray.channels());
-				}
-				
+				continue;
 			}
-			if (sum>sumThresh)
-			{
-				*(ptr + j) = 0;
-			}
+			counts++;//轮廓上拐点数
+		}
+		double AreaRadio = contourArea(contours[i])*1.0 / contours[i].size();
+		cout << "AreaRadio:" << contourArea(contours[i])*1.0 / contours[i].size() << endl;
+		cout << "radio: " << contours[i].size()*1.0 / counts << endl;
+		if ((contours[i].size()*1.0 / counts) > radio && AreaRadio < 0.4)//轮廓总长度与拐点数的比值
+		{
+			new_contours.push_back(contours[i]);
+			
 		}
 	}
-	imshow("sumThresh", can);
+	cout << "new_contours size: " << new_contours.size() << endl;
+	Mat hiera1(can.size(), can.type(), Scalar(0));
+	drawContours(hiera1, new_contours, -1, Scalar(255), 1);
+	imshow("newcontours", hiera1);
+
+	can = hiera1;
+
+	//imshow("thresh", gray);
+	//======去除密度大的斑块
+	//int sumThresh = 255 * 12;
+	//for (int i=5;i<gray.rows-5;i++)
+	//{
+	//	uchar* ptr = can.ptr(i);
+	//	for (int j=5;j<gray.cols-5;j++)
+	//	{
+	//		int sum = 0;
+	//		for (int k=-5;k<6;k++)
+	//		{
+	//			for (int m=-5;m<6;m++)
+	//			{
+	//				sum += *(ptr + k * gray.step + (j + m)*gray.channels());
+	//			}
+	//			
+	//		}
+	//		if (sum>sumThresh)
+	//		{
+	//			*(ptr + j) = 0;
+	//		}
+	//	}
+	//}
+	//imshow("sumThresh", can);
 	//imwrite("prof4.jpg",can);
 	vector<Vec3f> circles;
-	HoughCircles(can, circles, HOUGH_GRADIENT, 1, 1, 100, 50, 0, 0);
+	HoughCircles(can, circles, HOUGH_GRADIENT, 2, 1, 100, 30, 60, 65);
 	//cout << "cirlces[0]: " << circles[0] << endl;
 
 	for (size_t i = 0; i < 1 && i<circles.size(); i++)
@@ -53,9 +110,9 @@ int main()
 		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
 		int radius = cvRound(circles[i][2]);
 		// draw the circle center
-		circle(gray, center, 3, Scalar(255,255,255), -1, 8, 0);
+		circle(can, center, 3, Scalar(255,255,255), -1, 8, 0);
 		// draw the circle outline 
-		circle(gray, center, radius, Scalar(255,255,255), 3, 8, 0);
+		circle(can, center, radius, Scalar(255,255,255), 3, 8, 0);
 		std::cout << "radius: " << radius << endl;
 	}
 	//int bigCricleLfx = circles[0][0] - (int)circles[0][2];
@@ -78,7 +135,7 @@ int main()
 	//	std::cout << "radius: " << radius << endl;
 	//}
 	
-	imshow("HoughCircle", gray);
+	imshow("HoughCircle", can);
 	//Mat close_kenerl = (Mat_<uchar>(3, 3) <<
 	//	1, 1, 1,
 	//	1, 1, 1,
