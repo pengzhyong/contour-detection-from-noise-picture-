@@ -4,14 +4,14 @@ using namespace cv;
 using namespace std;
 int main()
 {
-	Mat src = imread("pic/c8.jpg");
+	Mat src = imread("pic/c11.jpg");
 	pyrDown(src, src);
 	//pyrDown(src, src);
 	imshow("src", src);
 	Mat gray;
 	cvtColor(src, gray, COLOR_BGR2GRAY);
 	//threshold(gray, gray, 100, 255, THRESH_BINARY_INV);
-	//GaussianBlur(gray, gray, Size(3, 3), 3);
+	//GaussianBlur(gray, gray, Size(3, 3), 1);
 
 	//equalizeHist(gray, gray);
 
@@ -102,7 +102,7 @@ int main()
 	//imshow("sumThresh", can);
 	//imwrite("prof4.jpg",can);
 	vector<Vec3f> circles;
-	HoughCircles(can, circles, HOUGH_GRADIENT, 2, 1, 100, 30, 60, 65);
+	HoughCircles(can, circles, HOUGH_GRADIENT, 2, 1, 100, 30, 55, 70);
 	//cout << "cirlces[0]: " << circles[0] << endl;
 
 	for (size_t i = 0; i < 1 && i<circles.size(); i++)
@@ -110,32 +110,37 @@ int main()
 		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
 		int radius = cvRound(circles[i][2]);
 		// draw the circle center
-		circle(can, center, 3, Scalar(255,255,255), -1, 8, 0);
+		//circle(gray, center, 3, Scalar(255,255,255), -1, 8, 0);
 		// draw the circle outline 
-		circle(can, center, radius, Scalar(255,255,255), 3, 8, 0);
+		circle(gray, center, radius, Scalar(255,255,255), 1, 8, 0);
 		std::cout << "radius: " << radius << endl;
 	}
-	//int bigCricleLfx = circles[0][0] - (int)circles[0][2];
-	//int bigCricleLfy = circles[0][1] - (int)circles[0][2];
+	if (circles.size()<1)
+	{
+		cout << "unable to detect the big circle " << endl;
+		return 0;
+	}
+	int bigCricleLfx = circles[0][0] - (int)circles[0][2];
+	int bigCricleLfy = circles[0][1] - (int)circles[0][2];
 
-	//Mat can1(can, Rect(circles[0][0]-(int)circles[0][2], circles[0][1]-(int)circles[0][2],2* (int)circles[0][2],2*(int)circles[0][2]));
-	//vector<Vec3f> circles1;
+	Mat can1(can, Rect(circles[0][0]-(int)circles[0][2], circles[0][1]-(int)circles[0][2],2* (int)circles[0][2],2*(int)circles[0][2]));
+	vector<Vec3f> circles1;
 
-	//HoughCircles(can1, circles1, HOUGH_GRADIENT, 2, 1, 100, 30, 20, 30);
-	////cout << "cirlces[1]: " << circles1[0] << endl;
+	HoughCircles(can1, circles1, HOUGH_GRADIENT, 2, 1, 100, 40, 20, 55);
+	//cout << "cirlces[1]: " << circles1[0] << endl;
 
-	//for (size_t i = 0; i < circles1.size(); i++)
-	//{
-	//	Point center(cvRound(circles1[i][0])+bigCricleLfx, cvRound(circles1[i][1])+bigCricleLfy);
-	//	int radius = cvRound(circles1[i][2]);
-	//	// draw the circle center
-	//	circle(gray, center, 3, Scalar(255,255,255), -1, 8, 0);
-	//	// draw the circle outline 
-	//	circle(gray, center, radius, Scalar(255,255,255), 3, 8, 0);
-	//	std::cout << "radius: " << radius << endl;
-	//}
+	for (size_t i = 0; i < 1 &&i < circles1.size(); i++)
+	{
+		Point center(cvRound(circles1[i][0])+bigCricleLfx, cvRound(circles1[i][1])+bigCricleLfy);
+		int radius = cvRound(circles1[i][2]);
+		// draw the circle center
+		circle(gray, center, 3, Scalar(255,255,255), -1, 8, 0);
+		// draw the circle outline 
+		circle(gray, center, radius, Scalar(200,200,200), 1, 8, 0);
+		std::cout << "radius: " << radius << endl;
+	}
 	
-	imshow("HoughCircle", can);
+	imshow("HoughCircle", gray);
 	//Mat close_kenerl = (Mat_<uchar>(3, 3) <<
 	//	1, 1, 1,
 	//	1, 1, 1,
