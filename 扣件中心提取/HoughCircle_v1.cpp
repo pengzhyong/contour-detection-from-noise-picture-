@@ -2,11 +2,11 @@
 #include<vector>
 using namespace cv;
 using namespace std;
-int _main()
+int main()
 {
-	Mat src = imread("pic/c11.jpg");
+	Mat src = imread("pic/kj.jpg");
 	pyrDown(src, src);
-	//pyrDown(src, src);
+	pyrDown(src, src);
 	imshow("src", src);
 	Mat gray;
 	cvtColor(src, gray, COLOR_BGR2GRAY);
@@ -19,16 +19,16 @@ int _main()
 	Mat can;
 	vector<vector<Point> > contours;
 	//vector<vector<Vec4i> > hierarchy;
-	Canny(gray, can, 50, 100);
+	Canny(gray, can, 80, 150);
 	
-	imshow("canny", can);
+	imshow("can", can);
 	Mat temp;
 	temp = can.clone();
 	findContours(temp,contours, RETR_CCOMP, CHAIN_APPROX_SIMPLE);
 	Mat hiera(can.size(), can.type(),Scalar(0));
 	drawContours(hiera, contours, -1, Scalar(255), 1);
 	imshow("contours", hiera);
-	vector<vector<Point> > new_contours;
+   	vector<vector<Point> > new_contours;
 	int longThresh = 50;
 	double radio = 1.1;
 	for (int i=0;i<contours.size();i++)
@@ -73,7 +73,7 @@ int _main()
 	Mat hiera1(can.size(), can.type(), Scalar(0));
 	drawContours(hiera1, new_contours, -1, Scalar(255), 1);
 	imshow("newcontours", hiera1);
-
+	// waitKey(0);
 	can = hiera1;
 
 	//imshow("thresh", gray);
@@ -102,7 +102,7 @@ int _main()
 	//imshow("sumThresh", can);
 	//imwrite("prof4.jpg",can);
 	vector<Vec3f> circles;
-	HoughCircles(can, circles, HOUGH_GRADIENT, 2, 1, 100, 30, 55, 70);
+	HoughCircles(can, circles, HOUGH_GRADIENT, 2, 1, 100, 30, 60, 80);
 	//cout << "cirlces[0]: " << circles[0] << endl;
 
 	for (size_t i = 0; i < 1 && i<circles.size(); i++)
@@ -113,7 +113,7 @@ int _main()
 		//circle(gray, center, 3, Scalar(255,255,255), -1, 8, 0);
 		// draw the circle outline 
 		circle(gray, center, radius, Scalar(255,255,255), 1, 8, 0);
-		std::cout << "radius: " << radius << endl;
+		//std::cout << "radius: " << radius << endl;
 	}
 	if (circles.size()<1)
 	{
@@ -126,7 +126,7 @@ int _main()
 	Mat can1(can, Rect(circles[0][0]-(int)circles[0][2], circles[0][1]-(int)circles[0][2],2* (int)circles[0][2],2*(int)circles[0][2]));
 	vector<Vec3f> circles1;
 
-	HoughCircles(can1, circles1, HOUGH_GRADIENT, 2, 1, 100, 40, 20, 55);
+	HoughCircles(can1, circles1, HOUGH_GRADIENT, 2, 1, 100, 20, 20, 65);
 	//cout << "cirlces[1]: " << circles1[0] << endl;
 
 	for (size_t i = 0; i < 1 &&i < circles1.size(); i++)
@@ -141,6 +141,20 @@ int _main()
 	}
 	
 	imshow("HoughCircle", gray);
+	//imshow("hough", hiera1);
+
+	//进一步减小图像处理范围
+	cvtColor(src, gray, COLOR_BGR2GRAY);
+
+	Mat nut(gray, Rect(circles[0][0] - (int)circles[0][2] , circles[0][1] - (int)circles[0][2] , 2 * (int)circles[0][2] , 2 * (int)circles[0][2] ));
+	imshow("nut", nut);
+	//equalizeHist(nut, nut);
+	Mat nutCan;
+	Canny(nut, nutCan, 80, 150);
+	imshow("nutCan", nutCan);
+
+
+
 	//Mat close_kenerl = (Mat_<uchar>(3, 3) <<
 	//	1, 1, 1,
 	//	1, 1, 1,
@@ -148,9 +162,7 @@ int _main()
 	//morphologyEx(gray, gray, MORPH_ERODE, close_kenerl);
 	//morphologyEx(gray, gray, MORPH_ERODE, close_kenerl);
 	//morphologyEx(gray, gray, MORPH_CLOSE, close_kenerl);
-
 	//imshow("MORPH", gray);
-
 	//GaussianBlur(src, src, Size(3, 3), 5);
 	//Mat cann;
 	//Canny(src, cann, 100, 200);
@@ -165,7 +177,6 @@ int _main()
 	//morphologyEx(cann, can, MORPH_CLOSE, close_kenerl);
 	//imshow("can_close", can);
 	//imshow("cha", cann-(can - cann));
-
 	//vector<vector<Point> > contours;
 	//vector<Vec4i> hierarchy;
 	//findContours(can, contours, hierarchy, CV_RETR_CCOMP, CHAIN_APPROX_NONE);
@@ -194,7 +205,6 @@ int _main()
 	//{
 	//	//drawContours(cont, new_contours, idx, sca);
 	//	drawContours(cont, new_contours, idx, sca);
-
 	//}
 	//imshow("new_contours", cont);
 	waitKey(0);
