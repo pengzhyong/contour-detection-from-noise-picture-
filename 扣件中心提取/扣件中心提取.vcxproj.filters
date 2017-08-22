@@ -21,5 +21,19 @@
     <ClCompile Include="TemplateMatch.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="DoG.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="轮廓去噪.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="contours.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="contours.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

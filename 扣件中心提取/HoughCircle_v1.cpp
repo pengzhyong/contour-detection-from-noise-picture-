@@ -11,8 +11,9 @@ int main()
 	Mat gray;
 	cvtColor(src, gray, COLOR_BGR2GRAY);
 	//threshold(gray, gray, 100, 255, THRESH_BINARY_INV);
-	//GaussianBlur(gray, gray, Size(3, 3), 1);
-
+	GaussianBlur(gray, gray, Size(3, 3), 1);
+	Mat gray0;
+	gray.copyTo(gray0);
 	//equalizeHist(gray, gray);
 
 	//adaptiveThreshold(gray, gray, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 5, 5);
@@ -29,6 +30,7 @@ int main()
 	drawContours(hiera, contours, -1, Scalar(255), 1);
 	imshow("contours", hiera);
    	vector<vector<Point> > new_contours;
+	//轮廓去噪，一句轮廓长度和拐点在轮廓中所占比例
 	int longThresh = 50;
 	double radio = 1.1;
 	for (int i=0;i<contours.size();i++)
@@ -102,7 +104,7 @@ int main()
 	//imshow("sumThresh", can);
 	//imwrite("prof4.jpg",can);
 	vector<Vec3f> circles;
-	HoughCircles(can, circles, HOUGH_GRADIENT, 2, 1, 100, 30, 60, 80);
+	HoughCircles(can, circles, HOUGH_GRADIENT, 2, 1, 100, 30, 70, 80);
 	//cout << "cirlces[0]: " << circles[0] << endl;
 
 	for (size_t i = 0; i < 1 && i<circles.size(); i++)
@@ -126,7 +128,7 @@ int main()
 	Mat can1(can, Rect(circles[0][0]-(int)circles[0][2], circles[0][1]-(int)circles[0][2],2* (int)circles[0][2],2*(int)circles[0][2]));
 	vector<Vec3f> circles1;
 
-	HoughCircles(can1, circles1, HOUGH_GRADIENT, 2, 1, 100, 20, 20, 65);
+	HoughCircles(can1, circles1, HOUGH_GRADIENT, 2, 1, 100, 20, 25, 65);
 	//cout << "cirlces[1]: " << circles1[0] << endl;
 
 	for (size_t i = 0; i < 1 &&i < circles1.size(); i++)
@@ -146,12 +148,19 @@ int main()
 	//进一步减小图像处理范围
 	cvtColor(src, gray, COLOR_BGR2GRAY);
 
-	Mat nut(gray, Rect(circles[0][0] - (int)circles[0][2] , circles[0][1] - (int)circles[0][2] , 2 * (int)circles[0][2] , 2 * (int)circles[0][2] ));
+	Mat nut(gray, Rect(circles[0][0] - (int)(1.25*circles[0][2]) , circles[0][1] - (int)(1.25*circles[0][2]) , 2.5 * (int)circles[0][2] , 2.5 * (int)circles[0][2] ));
+	//Mat nut;
+	//nut=gray0.clone();
+	Mat maskCircle(nut.size(), nut.type(), Scalar(0));
+	circle(maskCircle, Point((int)maskCircle.rows/2,(int)maskCircle.cols/2), (int)circles[0][2], Scalar(1), -1);
+	multiply(nut, maskCircle, nut);
 	imshow("nut", nut);
+	imshow("mask", maskCircle);
 	//equalizeHist(nut, nut);
 	Mat nutCan;
 	Canny(nut, nutCan, 80, 150);
 	imshow("nutCan", nutCan);
+	imwrite("nut.jpg", nut);
 
 
 

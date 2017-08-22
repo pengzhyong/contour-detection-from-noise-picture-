@@ -146,8 +146,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="contours.cpp" />
+    <ClCompile Include="DoG.cpp" />
     <ClCompile Include="HoughCircle_v1.cpp" />
     <ClCompile Include="TemplateMatch.cpp" />
+    <ClCompile Include="轮廓去噪.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="contours.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
