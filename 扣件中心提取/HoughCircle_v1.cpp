@@ -2,7 +2,7 @@
 #include<vector>
 using namespace cv;
 using namespace std;
-int main()
+int main_v1()
 {
 	Mat src = imread("pic/kj.jpg");
 	pyrDown(src, src);
