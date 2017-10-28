@@ -33,9 +33,18 @@
     <ClCompile Include="nut.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Gabor.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="main_gabor.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="contours.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Gabor.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

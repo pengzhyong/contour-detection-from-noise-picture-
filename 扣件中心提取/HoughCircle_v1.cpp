@@ -1,5 +1,6 @@
 #include<opencv2/opencv.hpp>
 #include<vector>
+#include "Gabor.h"
 using namespace cv;
 using namespace std;
 int main_v1()
@@ -20,7 +21,10 @@ int main_v1()
 	Mat can;
 	vector<vector<Point> > contours;
 	//vector<vector<Vec4i> > hierarchy;
-	Canny(gray, can, 80, 150);
+	//Canny(gray, can, 50, 100);
+	//=========
+	Gabor gabor_ker;
+	gabor_ker.Gabor_kernel(gray, can, 5, 0);
 	
 	imshow("can", can);
 	Mat temp;
