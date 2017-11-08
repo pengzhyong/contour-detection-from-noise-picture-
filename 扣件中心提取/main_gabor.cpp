@@ -72,9 +72,7 @@ int main()
 
 	Mat faciMat(srcImg.size(), CV_32F);
 	gaborSup.FacProgress(gray, faciMat);
-	normalize(faciMat, faciMat, 0, 1, NORM_MINMAX);
-	imshow("faciMat", faciMat);
-	waitKey(0);
+	
 
 	//Mat gabor(gray.size(), CV_32FC1);
 	//Gabor gabor_ker;
