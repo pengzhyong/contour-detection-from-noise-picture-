@@ -146,6 +146,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AveSobel.cpp" />
+    <ClCompile Include="ContourDetecion.cpp" />
     <ClCompile Include="contours.cpp" />
     <ClCompile Include="DoG.cpp" />
     <ClCompile Include="Gabor.cpp" />
@@ -156,6 +158,7 @@
     <ClCompile Include="轮廓去噪.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ContourDetecion.h" />
     <ClInclude Include="contours.h" />
     <ClInclude Include="Gabor.h" />
   </ItemGroup>
