@@ -4,7 +4,6 @@
 #include "ContourDetecion.h"
 using namespace cv;
 using namespace std;
-const double PI = 3.14159;
 void mySobel(Mat& src, Mat& dst, Mat& dstx, Mat& dsty);
 void NMS(Mat& srcx, Mat& srcy, Mat& dst, int tl, int th);
 void DFS(const Point point, Mat& img, Mat& visited, int th, int* flag);
@@ -30,18 +29,23 @@ void changeBeta(int, void*);
 Mat gaborFilt;// (gray.size(), CV_32F);
 Mat suppImg;// (gray.size(), CV_32F);
 Mat suppMat;// (gray.size(), CV_32F);
-int main()
+void main_gabor()
 {
 	//Mat src = imread("pic/gabor2.jpg");
-	Mat src = imread("pic/faci1.jpg");
+	Mat src = imread("pic/kj1.jpg");
 
 	//pyrDown(src, src);
 	//pyrDown(src, src);
 	imshow("src", src);
+	
 	cvtColor(src, gray, COLOR_BGR2GRAY);
 	GaussianBlur(gray, gray, Size(3, 3), 1);
-	//threshold(gray, gray, 50, 255, THRESH_BINARY_INV);
+	//gray.convertTo(gray, CV_8U);
+	////gray *= 255;
+	//gray = src;
+	//threshold(gray, gray, 200, 255, THRESH_BINARY);
 	//imshow("threshold", gray);
+	//waitKey(0);
 
 	//====LOG
 	/*Mat log(gray.size(), gray.type());
@@ -65,14 +69,54 @@ int main()
 	imshow("myCanny", myCanny);*/
 	
 	//=====Gabor
+	Mat mySob;
+	Mat mySobx;
+	Mat mySoby;
+	mySobel(gray, mySob, mySobx, mySoby);
+	imshow("mySob", mySob);
+	imwrite("mmmySob.jpg", mySob);
+	
+	Mat dst;
+	NMS(mySobx, mySoby, dst, 10, 100);
+	imshow("dst", dst);
 
-	Mat srcImg = gray.clone();
+	waitKey(0);
+	Mat srcImg = mySob.clone();
 	srcImg.convertTo(srcImg, CV_32F);
 	ContourDetecion gaborSup(srcImg);
 
 	Mat faciMat(srcImg.size(), CV_32F);
+	Canny(gray, gray, 50, 150);
+	imshow("canny_gray", gray);
+	waitKey(0);
+
 	gaborSup.FacProgress(gray, faciMat);
-	
+
+	normalize(faciMat, faciMat, 0, 255, NORM_MINMAX);
+	faciMat.convertTo(faciMat, CV_8U);
+	imshow("kk", faciMat);
+	//imwrite("faciImg.jpg", faciMat);
+	waitKey(0);
+
+	std::cout << "the second progress" << std::endl;
+	Canny(faciMat, faciMat, 240, 250);
+	imshow("2canny_gray", faciMat);
+	waitKey(0);
+	gaborSup.FacProgress(faciMat, faciMat);
+
+	normalize(faciMat, faciMat, 0, 255, NORM_MINMAX);
+	faciMat.convertTo(faciMat, CV_8U);
+	imshow("kk2", faciMat);
+	waitKey(0);
+
+	/*Mat faciMat1(srcImg.size(), CV_32F);
+	Mat faciMat2 = faciMat.clone();
+
+	gaborSup.FacProgress(faciMat2, faciMat1);
+
+	normalize(faciMat1, faciMat1, 0, 1, NORM_MINMAX);
+	imshow("faciMat1", faciMat1);
+	waitKey(0);*/
 
 	//Mat gabor(gray.size(), CV_32FC1);
 	//Gabor gabor_ker;
@@ -87,8 +131,8 @@ int main()
 	//gabor.convertTo(gabor, CV_8U);
 	////imwrite("gabor_1st.jpg", gabor);
 	////Mat gaborT = gabor.clone();
-	////gabor_ker.Gabor_kernel(gabor, gabor, 11, PI/3);// PI / 4);gabor
-	////gabor_ker.Gabor_kernel(gabor, gabor, 11, 0);// PI / 4);gabor
+	////gabor_ker.Gabor_kernel(gabor, gabor, 11, CV_PI/3);// CV_PI / 4);gabor
+	////gabor_ker.Gabor_kernel(gabor, gabor, 11, 0);// CV_PI / 4);gabor
 	//imshow("gabor", gabor);
 
 	//ContourDetecion contDetec(gray);
@@ -112,21 +156,34 @@ int main()
 	//createTrackbar("suppressin cof", "suppImg", &betaSup100, 1000, changeBeta);
 
 	//====Canny
-	Mat can;
+	/*Mat can;
+	faciMat *= 255;
 	faciMat.convertTo(can, CV_8U);
 	Canny(can, can, 50, 100);
 	imshow("can", can);
 
-	waitKey(0);
+	waitKey(0);*/
 }
 
 //考虑像素值与局部均值的差作为算子的相应位置的值
 void mySobel(Mat& src, Mat& dst, Mat& dstx, Mat& dsty)
 {
-	Mat SobKerx = (Mat_<int>(3, 3) << 1, 0, -1, -2, 0, -2, 1, 0, -1);
-	Mat SobKery = (Mat_<int>(3, 3) << 1, 2, 1, 0, 0, 0, -1, -2, -1);
+	Mat SobKerx = (Mat_<float>(3, 3) << 1, 0, -1, 2, 0, -2, 1, 0, -1);
+	Mat SobKery = (Mat_<float>(3, 3) << 1, 2, 1, 0, 0, 0, -1, -2, -1);
 	std::cout << SobKerx << endl;
 	std::cout << SobKery << endl;
+	//for test====for 2-dims Mat, the data was stored row-by-row!!
+	/*float* ptr = SobKerx.ptr<float>(1);
+	for (int i=0;i<3;i++)
+	{
+		for (int j=0;j<3;j++)
+		{
+			std::cout << SobKerx.at<float>(i, j) << "<====>" << *(ptr--) << endl;
+
+		}
+	}*/
+
+
 	src.copyTo(dst);
 	src.copyTo(dstx);
 	src.copyTo(dsty);
@@ -146,19 +203,23 @@ void mySobel(Mat& src, Mat& dst, Mat& dstx, Mat& dsty)
 			{
 				for (int n=-1;n<2;n++)
 				{
-					sum += (ptr + m)[j + n];
+					//sum += (ptr + m)[j + n];
+					sum += src.at<uchar>(i + m, j + n);
+
 				}
 			}
-			int average = sum / 9;
+			int average = sum / 9;//no effect, logic error;
+			//average = 0;
 			//滤波
 			int rx = 0;
 			int ry = 0;
-			rx = SobKerx.at<int>(0, 0)*((ptr - 1)[j - 1] - average) + SobKerx.at<int>(0, 1)*((ptr - 1)[j] - average) + SobKerx.at<int>(0, 2)*((ptr - 1)[j + 1] - average)
-				+ SobKerx.at<int>(1, 0)*((ptr)[j - 1] - average) + SobKerx.at<int>(1, 1)*((ptr)[j + 1] - average) + SobKerx.at<int>(1, 2)*((ptr)[j + 1] - average)
-				+ SobKerx.at<int>(2, 0)*((ptr + 1)[j - 1] - average) + SobKerx.at<int>(2, 1)*((ptr + 1)[j] - average) + SobKerx.at<int>(2, 2)*((ptr + 1)[j + 1] - average);
-			ry = SobKery.at<int>(0, 0)*((ptr - 1)[j - 1] - average) + SobKery.at<int>(0, 1)*((ptr - 1)[j] - average) + SobKery.at<int>(0, 2)*((ptr - 1)[j + 1] - average)
-				+ SobKery.at<int>(1, 0)*((ptr)[j - 1] - average) + SobKery.at<int>(1, 1)*((ptr)[j] - average) + SobKery.at<int>(1, 2)*((ptr)[j + 1] - average)
-				+ SobKery.at<int>(2, 0)*((ptr + 1)[j - 1] - average) + SobKery.at<int>(2, 1)*((ptr + 1)[j] - average) + SobKery.at<int>(2, 2)*((ptr + 1)[j + 1] - average);
+			
+			rx = SobKerx.at<float>(0, 0)*(src.at<uchar>(i-1,j-1) - average) +SobKerx.at<float>(0, 1)*(src.at<uchar>(i - 1, j) - average) + SobKerx.at<float>(0, 2)*(src.at<uchar>(i - 1, j + 1) - average)
+				+ SobKerx.at<float>(1, 0)*(src.at<uchar>(i, j - 1) - average) + SobKerx.at<float>(1, 1)*(src.at<uchar>(i, j) - average) + SobKerx.at<float>(1, 2)*(src.at<uchar>(i, j + 1) - average)
+				+ SobKerx.at<float>(2, 0)*(src.at<uchar>(i + 1, j - 1) - average) + SobKerx.at<float>(2, 1)*(src.at<uchar>(i + 1, j) - average) + SobKerx.at<float>(2, 2)*(src.at<uchar>(i + 1, j + 1) - average);
+			ry = SobKery.at<float>(0, 0)*(src.at<uchar>(i - 1, j - 1) - average) + SobKery.at<float>(0, 1)*(src.at<uchar>(i - 1, j) - average) + SobKery.at<float>(0, 2)*(src.at<uchar>(i - 1, j + 1) - average)
+				+ SobKery.at<float>(1, 0)*(src.at<uchar>(i, j - 1) - average) + SobKery.at<float>(1, 1)*(src.at<uchar>(i, j) - average) + SobKery.at<float>(1, 2)*(src.at<uchar>(i, j + 1) - average)
+				+ SobKery.at<float>(2, 0)*(src.at<uchar>(i + 1, j - 1) - average) + SobKery.at<float>(2, 1)*(src.at<uchar>(i + 1, j) - average) + SobKery.at<float>(2, 2)*(src.at<uchar>(i + 1, j + 1) - average);
 			ptrDst[j] = sqrt(rx*rx + ry*ry);
 			ptrDstx[j] = abs(rx);
 			ptrDsty[j] = abs(ry);
@@ -170,7 +231,6 @@ void mySobel(Mat& src, Mat& dst, Mat& dstx, Mat& dsty)
 //非极大值抑制和滞后阈值连接
 void NMS(Mat& srcx, Mat& srcy, Mat& dst, int tl, int th)
 {
-	const double pi = 3.14159;
 	Mat mag(srcx.size(), CV_32F);// gray.type());
 	Mat pha(srcx.size(), CV_32F);// gray.type());
 	std:cout << srcx.size() << ", " << srcy.size() << endl;
@@ -186,7 +246,7 @@ void NMS(Mat& srcx, Mat& srcy, Mat& dst, int tl, int th)
 		for (int c = 1; c < srcx.cols - 1; c++)
 		{
 			float angle = pha.at<float>(r, c);
-			if ((angle >= 1.875*pi || angle < 0.125*pi) || (angle >= 0.875 * pi && angle < 1.125*pi))//第一个条件要用||,处在圆首尾交接处
+			if ((angle >= 1.875*CV_PI || angle < 0.125*CV_PI) || (angle >= 0.875 * CV_PI && angle < 1.125*CV_PI))//第一个条件要用||,处在圆首尾交接处
 			{
 				uchar v0 = mag.at<float>(r, c);
 				uchar v1 = mag.at<float>(r, c - 1);
@@ -196,7 +256,7 @@ void NMS(Mat& srcx, Mat& srcy, Mat& dst, int tl, int th)
 					dst.at<float>(r, c) = 0;
 				}
 			}
-			if ((angle >= 0.125*pi && angle < 0.375*pi) || (angle >= 1.125 * pi && angle < 1.375*pi))
+			if ((angle >= 0.125*CV_PI && angle < 0.375*CV_PI) || (angle >= 1.125 * CV_PI && angle < 1.375*CV_PI))
 			{
 				uchar v0 = mag.at<float>(r, c);
 				uchar v1 = mag.at<float>(r + 1, c - 1);
@@ -206,7 +266,7 @@ void NMS(Mat& srcx, Mat& srcy, Mat& dst, int tl, int th)
 					dst.at<float>(r, c) = 0;
 				}
 			}
-			if ((angle >= 0.375*pi && angle < 0.625*pi) || (angle >= 1.375 * pi && angle < 1.625*pi))
+			if ((angle >= 0.375*CV_PI && angle < 0.625*CV_PI) || (angle >= 1.375 * CV_PI && angle < 1.625*CV_PI))
 			{
 				uchar v0 = mag.at<float>(r, c);
 				uchar v1 = mag.at<float>(r - 1, c);
@@ -216,7 +276,7 @@ void NMS(Mat& srcx, Mat& srcy, Mat& dst, int tl, int th)
 					dst.at<float>(r, c) = 0;
 				}
 			}
-			if ((angle >= 0.625*pi && angle < 0.875*pi) || (angle >= 1.625 * pi && angle < 1.875*pi))
+			if ((angle >= 0.625*CV_PI && angle < 0.875*CV_PI) || (angle >= 1.625 * CV_PI && angle < 1.875*CV_PI))
 			{
 				uchar v0 = mag.at<float>(r, c);
 				uchar v1 = mag.at<float>(r - 1, c + 1);
@@ -230,6 +290,7 @@ void NMS(Mat& srcx, Mat& srcy, Mat& dst, int tl, int th)
 	}
 
 	dst.convertTo(dst, CV_8U);
+	imwrite("mysob.jpg", dst);
 
 	//threshold(dst0, dst0, th - 1, 255, THRESH_);
 	//threshold(dst, dst, tl - 1, 255, THRESH_TOZERO);
@@ -265,7 +326,7 @@ void NMS(Mat& srcx, Mat& srcy, Mat& dst, int tl, int th)
 		}
 	}
 	threshold(dst, dst, th - 1, 255, THRESH_BINARY);
-	//imshow("dst1", dst);
+	imshow("dst1", dst);
 }
 
 //深度优先搜索，用于滞后阈值连接
@@ -322,7 +383,7 @@ void on_Change()
 {
 	Mat gabor(gray.size(), CV_32FC1);
 	Gabor gabor_ker;
-	double theta1 = g_theta / 180.0 * PI;
+	double theta1 = g_theta / 180.0 * CV_PI;
 	if (g_lamda % 2 == 0)
 		g_lamda += 1;
 	double lamda1 = g_lamda;
@@ -330,7 +391,7 @@ void on_Change()
 	if (g_size % 2 == 0)
 		g_size += 1;
 	int size1 = g_size;
-	double phi1 = g_phi / 180.0 * PI;
+	double phi1 = g_phi / 180.0 * CV_PI;
 	double sr = g_sigmaRatio100 / 100.0;
 	gabor_ker.Gabor_kernel(gray, gabor, theta1, lamda1, gama1, size1, phi1, sr);
 	gabor.convertTo(gabor, CV_8U);

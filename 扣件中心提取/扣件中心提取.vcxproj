@@ -153,7 +153,9 @@
     <ClCompile Include="Gabor.cpp" />
     <ClCompile Include="HoughCircle_v1.cpp" />
     <ClCompile Include="main_gabor.cpp" />
+    <ClCompile Include="main_postpro.cpp" />
     <ClCompile Include="nut.cpp" />
+    <ClCompile Include="PostProgress.cpp" />
     <ClCompile Include="TemplateMatch.cpp" />
     <ClCompile Include="轮廓去噪.cpp" />
   </ItemGroup>
@@ -161,6 +163,7 @@
     <ClInclude Include="ContourDetecion.h" />
     <ClInclude Include="contours.h" />
     <ClInclude Include="Gabor.h" />
+    <ClInclude Include="PostProgress.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

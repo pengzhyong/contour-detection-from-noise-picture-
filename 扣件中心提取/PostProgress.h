@@ -1,0 +1,31 @@
+#pragma once
+#include <opencv2/opencv.hpp>
+#include <vector>
+using namespace std;
+using namespace cv;
+class PostProgress
+{
+public:
+	PostProgress();
+	~PostProgress();
+	//非极大值抑制
+	void NMS(Mat& srcx, Mat& srcy, Mat& dst);
+	//Sobel算子
+	void mySobel(Mat& src, Mat& dst, Mat& dstx, Mat& dsty);
+	//对轮廓进行多边形逼近，通过轮廓点数与多边形数目的比值来判定轮廓是否是噪声轮廓，依据轮廓的低曲率特性
+	void RamerFunc(double* xdata, double* ydata, int beginpoint, int endpoint, int* ResultArray, int &Index, double th);
+	//对轮廓进行排序，这一步应在多边形逼近之前进行，如果轮廓为进行排序，可能会导致逼近出现错误的结果
+	void SortContours(vector<vector<Point> >& inCont, vector<vector<Point> >& outCont);
+	//找出轮廓中的交叉点,返回交叉点的索引号；在所有模式中，只有T形模式的结构才是交叉点，共有8中T形模式
+	void findCross(const vector<Point >& inCnt, vector<int >& crossIdx);
+private:
+	Point findEndPoints(vector<Point>&, int& );
+	bool isNeigbour(Point & a, Point & b, int isFourNeig);
+	bool isNeigbour(const Point & a, const Point & b);
+	int distance(Point&, Point&);
+	void splitContours(vector<Point >& srcConts, vector<vector<Point > >& dstCnt);//将含有多条交叉线的轮廓进行分解，使得每一条线轮廓没有分支;采用递归方式
+	void removeRepeat(vector<Point>&);
+	//找出没有交叉点的轮廓，轮廓从交叉点的一个邻域点开始跟踪，直到走到端点或者下一个交叉点
+	void getSingleCnt(int beginPointIdx, vector<Point >& inCnt, int* isVisited, vector<Point >& outCnt);
+};
+

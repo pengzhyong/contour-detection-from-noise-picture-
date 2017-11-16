@@ -45,6 +45,12 @@
     <ClCompile Include="ContourDetecion.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="PostProgress.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="main_postpro.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="contours.h">
@@ -54,6 +60,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ContourDetecion.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="PostProgress.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

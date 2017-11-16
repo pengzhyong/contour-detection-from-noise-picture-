@@ -286,7 +286,7 @@ Mat ContourDetecion::GaborEnergy(Mat & srcImg, Mat& dirImg, vector<Mat >& vGabor
 
 void ContourDetecion::FacilitationEnergy(vector<Mat>& vGaborE, vector<Mat>& faciEnergy, Mat& maxGabor, Mat& dirImg, int size)
 {
-	int Re = 10;
+	int Re =10;
 	double psi = CV_PI / 6;
 	double sigma_c = 0.17;
 	double sigma_d = 7; 
