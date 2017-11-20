@@ -3,7 +3,7 @@
 #include <opencv2/opencv.hpp>
 using namespace cv;
 using namespace std;
-void main()
+void main_postPre()
 {
 	//Mat src = imread("pic/gabor2.jpg");
 	Mat src = imread("pic/kj2.jpg");
@@ -16,26 +16,29 @@ void main()
 	cvtColor(src, gray, COLOR_BGR2GRAY);
 	GaussianBlur(gray, gray, Size(3, 3), 1);
 
+	Mat can;
+	Canny(gray, can, 50, 100);
+	
+
 	PostProgress postPro;
 	Mat dst;
 	Mat dstx;
 	Mat dsty;
 
-	postPro.mySobel(gray, dst, dstx, dsty);
-	//imshow("afterSobel", dst);
-	//imshow("afterSobel_x", dstx);
-	//imshow("afterSobel_y", dsty);
-	//waitKey(0);
-	Mat nms;
-	postPro.NMS(dstx, dsty, nms);
-	//imshow("contour",nms);
+	//postPro.mySobel(gray, dst, dstx, dsty);
+	//imshow("mySobel", dst);
+	////imshow("afterSobel_x", dstx);
+	////imshow("afterSobel_y", dsty);
+	////waitKey(0);
+	//Mat nms;
+	//postPro.NMS(dstx, dsty, nms);
+	//imshow("NMS",nms);
 	//waitKey(0);
 
 
-	Mat can;
+	
 	vector<vector<Point> > contour;
 	//vector<vector<Vec4i> > hierarchy;
-	Canny(gray, can, 50, 100);
 	Mat ker = (Mat_<uchar>(3, 3) << 1, 1, 1, 1, 1, 1, 1, 1, 1);
 	std::cout << ker << std::endl;
 	//morphologyEx(can, can, MORPH_CLOSE, ker);
@@ -59,7 +62,7 @@ void main()
 	//对轮廓进行多边形逼近，去噪
 	
 	vector<vector<Point> > newContour;
-	double curRadio = 10;//总点数/线段数
+	double curRadio = 5;//总点数/线段数
 	for (auto iter1 = contour.begin();iter1!=contour.end();iter1++)
 	{
 		double xdata[3000] = { 0 };
@@ -73,7 +76,7 @@ void main()
 		}
 		int resArr[300] = { 0 };
 		int ind = 0;
-		double th = 10;//直线拟合距离阈值
+		double th = 3;//直线拟合距离阈值
 		postPro.RamerFunc(xdata, ydata, 0, pNums - 1, resArr, ind, th);
 		if (pNums/ind > curRadio && pNums > 30)
 		{

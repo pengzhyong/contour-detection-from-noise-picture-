@@ -11,13 +11,20 @@ public:
 	//非极大值抑制
 	void NMS(Mat& srcx, Mat& srcy, Mat& dst);
 	//Sobel算子
-	void mySobel(Mat& src, Mat& dst, Mat& dstx, Mat& dsty);
+	void MySobel(Mat& src, Mat& dst, Mat& dstx, Mat& dsty);
 	//对轮廓进行多边形逼近，通过轮廓点数与多边形数目的比值来判定轮廓是否是噪声轮廓，依据轮廓的低曲率特性
 	void RamerFunc(double* xdata, double* ydata, int beginpoint, int endpoint, int* ResultArray, int &Index, double th);
 	//对轮廓进行排序，这一步应在多边形逼近之前进行，如果轮廓为进行排序，可能会导致逼近出现错误的结果
 	void SortContours(vector<vector<Point> >& inCont, vector<vector<Point> >& outCont);
 	//找出轮廓中的交叉点,返回交叉点的索引号；在所有模式中，只有T形模式的结构才是交叉点，共有8中T形模式
-	void findCross(const vector<Point >& inCnt, vector<int >& crossIdx);
+	void FindCross(const vector<Point >& inCnt, vector<int >& crossIdx);
+	
+	//================以下函数是在图像基础上直接进行
+	//找到图像中的端点，为去毛刺做准备
+	void FindEndPoint(Mat& srcImg, vector<Point>& vEndPoints);
+	void FindCrossPoint(Mat& srcImg, vector<Point>& vCrossPoints);
+	bool IsCrossPont(const Mat& srcImg, Point pt);
+	void RemoveBurr(Mat& srcImg, vector<Point>& vEndPoint, vector<Point>& vCrossPoint, int lenThresh = 20);
 private:
 	Point findEndPoints(vector<Point>&, int& );
 	bool isNeigbour(Point & a, Point & b, int isFourNeig);

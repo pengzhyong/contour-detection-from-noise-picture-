@@ -9,7 +9,7 @@ PostProgress::~PostProgress()
 {
 }
 
-void PostProgress::mySobel(Mat& src, Mat& dst, Mat& dstx, Mat& dsty)
+void PostProgress::MySobel(Mat& src, Mat& dst, Mat& dstx, Mat& dsty)
 {
 	Mat SobKerx = (Mat_<float>(3, 3) << 1, 0, -1, 2, 0, -2, 1, 0, -1);
 	Mat SobKery = (Mat_<float>(3, 3) << 1, 2, 1, 0, 0, 0, -1, -2, -1);
@@ -166,11 +166,19 @@ void PostProgress::RamerFunc(double* xdata, double* ydata, int beginpoint, int e
 
 void PostProgress::SortContours(vector<vector<Point> >& inCont, vector<vector<Point> >& outCont)
 {
-	int lenThresh = 5;
+	int lenThresh = 10;
 	for (int i = 0; i < inCont.size(); i++)
 	{
 		vector<vector<Point> > vCnt;
 		splitContours(inCont[i], vCnt);
+
+		//for debuger
+		int sizeSum = 0;
+		for (int m = 0; m < vCnt.size(); m++)
+		{
+			sizeSum += vCnt[m].size();
+		}
+		std::cout << inCont[i].size() << "	" << vCnt.size() <<" "<< sizeSum << endl;
 		//去除短轮廓，短轮廓一般是毛刺
 		for (auto j = vCnt.begin(); j != vCnt.end();)
 		{
@@ -369,6 +377,250 @@ void PostProgress::SortContours(vector<vector<Point> >& inCont, vector<vector<Po
 	//}
 }
 
+void PostProgress::FindEndPoint(Mat & srcImg, vector<Point>& vEndPoints)
+{
+	//!!行列位置存为坐标是注意，存坐标时X轴为列，Y轴为行，所以要先存列再存行
+	for (int r = 1; r < srcImg.rows - 1; r++)
+	{
+		uchar* prevPtr = srcImg.ptr<uchar>(r - 1);
+		uchar* ptr = srcImg.ptr<uchar>(r);
+		uchar* nextPtr = srcImg.ptr<uchar>(r + 1);
+		for (int c = 1; c < srcImg.cols - 1; c++)
+		{
+			if (ptr[c]!=0)
+			{
+				//只有一个相邻点时，端点共有8中模式；有两个相邻点时，端点共有8中模式，共16中端点模式
+				int neigborNums = 0;
+				vector<Point> vNeigbP;
+				for (int a = 0; a < 3; a++)
+				{
+					if (prevPtr[c - 1 + a]!=0)
+					{
+						neigborNums++;
+						vNeigbP.push_back(Point(c + a - 1, r - 1));
+					}
+				}
+				for (int a = 0; a < 3; a++)
+				{
+					if (ptr[c - 1 + a] != 0 && a != 1)
+					{
+						neigborNums++;
+						vNeigbP.push_back(Point(c + a - 1, r));
+					}
+				}
+				for (int a = 0; a < 3; a++)
+				{
+					if (nextPtr[c - 1 + a] != 0)
+					{
+						neigborNums++;
+						vNeigbP.push_back(Point(c + a - 1, r + 1));
+					}
+				}
+
+				if (neigborNums == 1)
+				{
+					vEndPoints.push_back(Point(c, r));
+				}
+				if (neigborNums == 2)
+				{
+					if ((abs(vNeigbP[0].x - vNeigbP[1].x) == 1 && (vNeigbP[0].y - vNeigbP[1].y) == 0) || (abs(vNeigbP[0].y - vNeigbP[1].y) == 1 && (vNeigbP[0].x - vNeigbP[1].x) == 0))
+					{
+						vEndPoints.push_back(Point(c, r));
+					}
+				}
+				if (neigborNums == 3)
+				{
+					if ((vNeigbP[0].x== vNeigbP[1].x && vNeigbP[0].x == vNeigbP[2].x) || (vNeigbP[0].y == vNeigbP[1].y && vNeigbP[0].y == vNeigbP[2].y))
+					{
+						ptr[c] = 0;
+					}
+				}
+				if (neigborNums == 0)
+				{
+					ptr[c] = 0;
+				}
+			}
+		}
+	}
+}
+
+void PostProgress::FindCrossPoint(Mat & srcImg, vector<Point>& vCrossPoints)
+{
+	for (int i = 1; i < srcImg.rows - 1; i++)
+	{
+		uchar* ptr = srcImg.ptr<uchar>(i);
+		for (int j = 1; j < srcImg.cols - 1; j++)
+		{
+			if (ptr[j] != 0 && IsCrossPont(srcImg, Point(j, i)))
+			{
+				vCrossPoints.push_back(Point(j, i));
+			}
+		}
+	}
+}
+
+bool PostProgress::IsCrossPont(const Mat & srcImg, Point pt)
+{
+	int r = pt.y;
+	int c = pt.x;
+	const uchar* prePtr = srcImg.ptr<uchar>(r-1);
+	const uchar* ptr = srcImg.ptr<uchar>(r);
+	const uchar* nextPtr = srcImg.ptr<uchar>(r+1);
+	if (ptr[c-1]==255 && ptr[c+1]==255 && (prePtr[c]==255 || nextPtr[c]==255 ))//==== - =====
+	{
+		return true;
+	}
+	if (prePtr[c] != 0 && nextPtr[c] != 0 && (ptr[c-1] != 0 || ptr[c+1] != 0))//==== | =====
+	{
+		return true;
+	}
+	if (prePtr[c + 1] != 0 && nextPtr[c - 1] != 0 && (prePtr[c-1] != 0 || nextPtr[c+1] != 0))//==== / =====
+	{
+		return true;
+	}
+	if (prePtr[c - 1] != 0 && nextPtr[c + 1] != 0 && (prePtr[c+1] != 0 || nextPtr[c-1] != 0))//==== \ =====
+	{
+		return true;
+	}
+	return false;
+}
+
+void PostProgress::RemoveBurr(Mat & srcImg, vector<Point>& vEndPoints, vector<Point>& vCrossPoints, int lenThresh)
+{
+	int lengThresh = lenThresh;//length threshhold
+	for (int i = 0; i < vEndPoints.size(); i++)
+	{
+		srcImg.at<uchar>(vEndPoints[i].y, vEndPoints[i].x) = 1;//端点赋1
+	}
+	for (int i = 0; i < vCrossPoints.size(); i++)
+	{
+		srcImg.at<uchar>(vCrossPoints[i].y, vCrossPoints[i].x) = 2;//交叉点赋2
+	}
+	vector<int> delIdx;
+	Mat isVisited(srcImg.size(), CV_8U, Scalar(0));
+	for (int i=0;i<vEndPoints.size();i++)
+	{
+		int pNums = 0;
+		
+		vector<Point> vTmpPoints;
+		vTmpPoints.push_back(vEndPoints[i]);
+		isVisited.at<uchar>(vEndPoints[i].y, vEndPoints[i].x) = 1;
+		//Point prevPoint = vEndPoints[i];
+		for (int j=0;j<lengThresh;j++)
+		{
+			pNums++;
+			int r = vTmpPoints[vTmpPoints.size() - 1].y;
+			int c = vTmpPoints[vTmpPoints.size() - 1].x;
+			//如果追踪到了边界，则追踪结束
+			if (r == 0 || r == srcImg.rows -1  || c == 0 || c == srcImg.cols - 1)
+			{
+				break;
+			}
+
+			uchar* prevPtr = srcImg.ptr<uchar>(r-1);
+			uchar* ptr = srcImg.ptr<uchar>(r);
+			uchar* nextPtr = srcImg.ptr<uchar>(r+1);
+			bool bTraced = 0;
+			//if (ptr[c + 1] == 255 && !(r == prevPoint.y && (c + 1) == prevPoint.x))
+			if (ptr[c + 1] == 255 && !isVisited.at<uchar>(r,c+1))
+			{
+				bTraced = 1;
+				vTmpPoints.push_back(Point(c+1, r));
+				isVisited.at<uchar>(r, c + 1) = 1;
+
+				//prevPoint = Point(c, r);
+				
+			}
+			//else if (prevPtr[c] == 255 && !((r-1) == prevPoint.y && c == prevPoint.x))
+			else if (prevPtr[c] == 255 && !isVisited.at<uchar>(r-1,c))
+			{
+				bTraced = 1;
+				vTmpPoints.push_back(Point(c, r-1));
+				isVisited.at<uchar>(r - 1, c) = 1;
+				//prevPoint = Point(c, r);
+				
+			}
+			//else if (ptr[c - 1] == 255 && !(r == prevPoint.y && (c - 1) == prevPoint.x))
+			else if (ptr[c - 1] == 255 && !isVisited.at<uchar>(r, c - 1))
+			{
+				bTraced = 1;
+				vTmpPoints.push_back(Point(c-1, r));
+				isVisited.at<uchar>(r, c - 1) = 1;
+				//prevPoint = Point(c, r);
+				
+			}
+			//else if (nextPtr[c] == 255 && !((r + 1) == prevPoint.y && c == prevPoint.x))
+			else if (nextPtr[c] == 255 && !isVisited.at<uchar>(r+1,c))
+			{
+				bTraced = 1;
+				vTmpPoints.push_back(Point(c, r+1));
+				isVisited.at<uchar>(r+1,c) = 1;
+				//prevPoint = Point(c, r);
+				
+			}
+			//========
+			//else if (prevPtr[c + 1] == 255 && !((r-1) == prevPoint.y && (c + 1) == prevPoint.x))
+			else if (prevPtr[c + 1] == 255 && !isVisited.at<uchar>(r-1, c + 1))
+			{
+				bTraced = 1;
+				vTmpPoints.push_back(Point(c+1, r-1));
+				isVisited.at<uchar>(r - 1, c + 1) = 1;
+				//prevPoint = Point(c, r);
+				
+			}
+			//else if (prevPtr[c - 1] == 255 && !((r - 1) == prevPoint.y && (c - 1) == prevPoint.x))
+			else if (prevPtr[c - 1] == 255 && !isVisited.at<uchar>(r-1,c - 1))
+			{
+				bTraced = 1;
+				vTmpPoints.push_back(Point(c - 1, r - 1));
+				isVisited.at<uchar>(r - 1, c - 1) = 1;
+				//prevPoint = Point(c, r);
+				
+			}
+			//else if (nextPtr[c - 1] == 255 && !((r + 1) == prevPoint.y && (c - 1) == prevPoint.x))
+			else if (nextPtr[c - 1] == 255 && !isVisited.at<uchar>(r+1,c-1))
+			{
+				bTraced = 1;
+				vTmpPoints.push_back(Point(c-1, r+1));
+				isVisited.at<uchar>(r + 1, c - 1) = 1;
+				//prevPoint = Point(c, r);
+				
+			}
+			//else if (nextPtr[c + 1] == 255 && !((r + 1) == prevPoint.y && (c + 1) == prevPoint.x))
+			else if (nextPtr[c + 1] == 255 && !isVisited.at<uchar>(r+1, c + 1))
+			{
+				bTraced = 1;
+				vTmpPoints.push_back(Point(c + 1, r + 1));
+				isVisited.at<uchar>(r + 1, c + 1) = 1;
+				//prevPoint = Point(c, r);
+				
+			}
+			if (!bTraced)
+			{
+				break;
+			}
+			
+		}
+		if (pNums < lengThresh)
+		{
+			for (int k=0;k<vTmpPoints.size();k++)
+			{
+				srcImg.at<uchar>(vTmpPoints[k].y, vTmpPoints[k].x) = 0;
+			}
+			delIdx.push_back(i);
+			//vEndPoints.erase(vEndPoints.begin() + i);
+		}
+	 }
+	for (int i = delIdx.size() - 1; i >= 0; i--)
+	{
+		vEndPoints.erase(vEndPoints.begin() + delIdx[i]);//删除向量中的点时，从后往前删，避免索引变化带来的影响
+	}
+	for (int i = 0; i < vCrossPoints.size(); i++)
+	{
+		srcImg.at<uchar>(vCrossPoints[i].y, vCrossPoints[i].x) = 255;//交叉点还原
+	}
+}
+
 Point PostProgress::findEndPoints(vector<Point>& vp, int& beginIdx)
 {
 	int minx = vp[0].x;
@@ -430,10 +682,16 @@ int PostProgress::distance(Point& a, Point& b)
 
 void PostProgress::splitContours(vector<Point>& srcCont, vector<vector<Point> >& dstConts)
 {
+	removeRepeat(srcCont);
 	vector<int> crossPoint;
-	findCross(srcCont, crossPoint);
+	FindCross(srcCont, crossPoint);
+	if (crossPoint.size() == 0)
+	{
+		dstConts.push_back(srcCont);
+		return;
+	}
 	int isVisited[1000] = { 0 };
-	for (int i = 0; i < crossPoint.size(); i += 4)
+	for (int i = 0; i < crossPoint.size(); i++)
 	{
 		isVisited[crossPoint[i]] = 1;
 	}
@@ -597,7 +855,7 @@ void PostProgress::removeRepeat(vector<Point>& srcCont)
 	srcCont = temp0;
 }
 
-void PostProgress::findCross(const vector<Point>& inCnt, vector<int >& crossIdx)
+void PostProgress::FindCross(const vector<Point>& inCnt, vector<int >& crossIdx)
 {
 	int pNums = inCnt.size();
 	for (int i = 0; i < pNums; i++)
@@ -614,28 +872,214 @@ void PostProgress::findCross(const vector<Point>& inCnt, vector<int >& crossIdx)
 			idx++;
 		}
 		//为了简单起见，暂时只考虑三点相邻情况，如果3点中两两之前的距离大于1，则为交叉点
-		if (tmpIdx.size() == 3)
+		if (tmpIdx.size() >= 3)
 		{
-			int norm1 = abs(inCnt[tmpIdx[0]].x - inCnt[tmpIdx[1]].x) + abs(inCnt[tmpIdx[0]].y - inCnt[tmpIdx[1]].y);
-			int norm2 = abs(inCnt[tmpIdx[0]].x - inCnt[tmpIdx[2]].x) + abs(inCnt[tmpIdx[0]].y - inCnt[tmpIdx[2]].y);
-			int norm3 = abs(inCnt[tmpIdx[1]].x - inCnt[tmpIdx[2]].x) + abs(inCnt[tmpIdx[1]].x - inCnt[tmpIdx[2]].y);
-			if (norm1 > 1 && norm2 > 1 && norm3 > 1)
+			int flag = 1;
+			for (int k = 0; k < tmpIdx.size(); k++)
 			{
-				//存储交叉点和3个相邻的点
-				crossIdx.push_back(i);
-				crossIdx.push_back(tmpIdx[0]);
-				crossIdx.push_back(tmpIdx[1]);
-				crossIdx.push_back(tmpIdx[2]);
+				int deltaPosx = inCnt[tmpIdx[k]].x - inCnt[i].x;
+				int deltaPosy = inCnt[tmpIdx[k]].y - inCnt[i].y;
+
+				if (deltaPosx == 1 && deltaPosy ==0)
+				{
+					for (int m = 0; m < tmpIdx.size(); m++)
+					{
+						if ((inCnt[tmpIdx[m]].x - inCnt[i].x) == -1 && (inCnt[tmpIdx[m]].y - inCnt[i].y) == 0)
+						{
+							for (int n = 0; n < tmpIdx.size(); n++)
+							{
+								if ((inCnt[tmpIdx[n]].x - inCnt[i].x) == 0 && abs(inCnt[tmpIdx[n]].y - inCnt[i].y) == 1)
+								{
+									crossIdx.push_back(i);
+									crossIdx.push_back(tmpIdx[k]);
+									crossIdx.push_back(tmpIdx[m]);
+									crossIdx.push_back(tmpIdx[n]);
+									flag = 0;
+									break;
+								}
+							}
+						}
+					}
+				}
+				else if (deltaPosx == -1 && deltaPosy == 0)
+				{
+					for (int m = 0; m < tmpIdx.size(); m++)
+					{
+						if ((inCnt[tmpIdx[m]].x - inCnt[i].x) == 1 && (inCnt[tmpIdx[m]].y - inCnt[i].y) == 0)
+						{
+							for (int n = 0; n < tmpIdx.size(); n++)
+							{
+								if ((inCnt[tmpIdx[n]].x - inCnt[i].x) == 0 && abs(inCnt[tmpIdx[n]].y - inCnt[i].y) == 1)
+								{
+									crossIdx.push_back(i);
+									crossIdx.push_back(tmpIdx[k]);
+									crossIdx.push_back(tmpIdx[m]);
+									crossIdx.push_back(tmpIdx[n]);
+									flag = 0;
+									break;
+								}
+							}
+						}
+					}
+				}
+				else if (deltaPosy == 1 && deltaPosx == 0)
+				{
+					for (int m = 0; m < tmpIdx.size(); m++)
+					{
+						if ((inCnt[tmpIdx[m]].y - inCnt[i].y) == -1 && (inCnt[tmpIdx[m]].x - inCnt[i].x) == 0)
+						{
+							for (int n = 0; n < tmpIdx.size(); n++)
+							{
+								if (abs(inCnt[tmpIdx[n]].x - inCnt[i].x) == 1 && abs(inCnt[tmpIdx[n]].y - inCnt[i].y) == 0)
+								{
+									crossIdx.push_back(i);
+									crossIdx.push_back(tmpIdx[k]);
+									crossIdx.push_back(tmpIdx[m]);
+									crossIdx.push_back(tmpIdx[n]);
+									flag = 0;
+
+									break;
+								}
+							}
+						}
+					}
+				}
+				else if (deltaPosy == -1 && deltaPosx == 0)
+				{
+					for (int m = 0; m < tmpIdx.size(); m++)
+					{
+						if ((inCnt[tmpIdx[m]].y - inCnt[i].y) == 1 && (inCnt[tmpIdx[m]].x - inCnt[i].x) == 0)
+						{
+							for (int n = 0; n < tmpIdx.size(); n++)
+							{
+								if (abs(inCnt[tmpIdx[n]].x - inCnt[i].x) == 1 && abs(inCnt[tmpIdx[n]].y - inCnt[i].y) == 0)
+								{
+									crossIdx.push_back(i);
+									crossIdx.push_back(tmpIdx[k]);
+									crossIdx.push_back(tmpIdx[m]);
+									crossIdx.push_back(tmpIdx[n]);
+									flag = 0;
+
+									break;
+								}
+							}
+						}
+					}
+				}
+				else if (deltaPosx == 1 && deltaPosy == 1)
+				{
+					for (int m = 0; m < tmpIdx.size(); m++)
+					{
+						if ((inCnt[tmpIdx[m]].x - inCnt[i].x) == -1 && (inCnt[tmpIdx[m]].y - inCnt[i].y) == -1)
+						{
+							for (int n = 0; n < tmpIdx.size(); n++)
+							{
+								if ((inCnt[tmpIdx[n]].x - inCnt[i].x)*(inCnt[tmpIdx[n]].y - inCnt[i].y) == -1)
+								{
+									crossIdx.push_back(i);
+									crossIdx.push_back(tmpIdx[k]);
+									crossIdx.push_back(tmpIdx[m]);
+									crossIdx.push_back(tmpIdx[n]);
+									flag = 0;
+
+									break;
+								}
+							}
+						}
+					}
+				}
+				else if (deltaPosx == -1 && deltaPosy == -1)
+				{
+					for (int m = 0; m < tmpIdx.size(); m++)
+					{
+						if ((inCnt[tmpIdx[m]].x - inCnt[i].x) == 1 && (inCnt[tmpIdx[m]].y - inCnt[i].y) == 1)
+						{
+							for (int n = 0; n < tmpIdx.size(); n++)
+							{
+								if ((inCnt[tmpIdx[n]].x - inCnt[i].x)*(inCnt[tmpIdx[n]].y - inCnt[i].y) == -1)
+								{
+									crossIdx.push_back(i);
+									crossIdx.push_back(tmpIdx[k]);
+									crossIdx.push_back(tmpIdx[m]);
+									crossIdx.push_back(tmpIdx[n]);
+									flag = 0;
+
+									break;
+								}
+							}
+						}
+					}
+				}
+				else if (deltaPosx == 1 && deltaPosy == -1)
+				{
+					for (int m = 0; m < tmpIdx.size(); m++)
+					{
+						if ((inCnt[tmpIdx[m]].x - inCnt[i].x) == -1 && (inCnt[tmpIdx[m]].y - inCnt[i].y) == 1)
+						{
+							for (int n = 0; n < tmpIdx.size(); n++)
+							{
+								if ((inCnt[tmpIdx[n]].x - inCnt[i].x)*(inCnt[tmpIdx[n]].y - inCnt[i].y) == 1)
+								{
+									crossIdx.push_back(i);
+									crossIdx.push_back(tmpIdx[k]);
+									crossIdx.push_back(tmpIdx[m]);
+									crossIdx.push_back(tmpIdx[n]);
+									flag = 0;
+
+									break;
+								}
+							}
+						}
+					}
+				}
+				else if (deltaPosx == -1 && deltaPosy == 1)
+				{
+					for (int m = 0; m < tmpIdx.size(); m++)
+					{
+						if ((inCnt[tmpIdx[m]].x - inCnt[i].x) == 1 && (inCnt[tmpIdx[m]].y - inCnt[i].y) == -1)
+						{
+							for (int n = 0; n < tmpIdx.size(); n++)
+							{
+								if ((inCnt[tmpIdx[n]].x - inCnt[i].x)*(inCnt[tmpIdx[n]].y - inCnt[i].y) == 1)
+								{
+									crossIdx.push_back(i);
+									crossIdx.push_back(tmpIdx[k]);
+									crossIdx.push_back(tmpIdx[m]);
+									crossIdx.push_back(tmpIdx[n]);
+									flag = 0;
+
+									break;
+								}
+							}
+						}
+					}
+				}
+				if (flag == 0)
+					break;
 			}
+
+
+
+			//int norm1 = abs(inCnt[tmpIdx[0]].x - inCnt[tmpIdx[1]].x) + abs(inCnt[tmpIdx[0]].y - inCnt[tmpIdx[1]].y);
+			//int norm2 = abs(inCnt[tmpIdx[0]].x - inCnt[tmpIdx[2]].x) + abs(inCnt[tmpIdx[0]].y - inCnt[tmpIdx[2]].y);
+			//int norm3 = abs(inCnt[tmpIdx[1]].x - inCnt[tmpIdx[2]].x) + abs(inCnt[tmpIdx[1]].y - inCnt[tmpIdx[2]].y);
+			//if (norm1 > 1 && norm2 > 1 && norm3 > 1)
+			//{
+			//	//存储交叉点和3个相邻的点
+			//	crossIdx.push_back(i);
+			//	crossIdx.push_back(tmpIdx[0]);
+			//	crossIdx.push_back(tmpIdx[1]);
+			//	crossIdx.push_back(tmpIdx[2]);
+			//}
 		}
 	}
 }
 
 void PostProgress::getSingleCnt(int beginPointIdx, vector<Point>& inCnt, int * isVisited, vector<Point>& outCnt)
 {
-	if (isVisited[beginPointIdx])
-		return;//如果点之前被追踪过，那么直接返回，以免一条轮廓追踪两次
 	outCnt.push_back(inCnt[beginPointIdx]);
+	//if (isVisited[beginPointIdx])
+	//	return;//如果点之前被追踪过，那么直接返回，以免一条轮廓追踪两次
 	isVisited[beginPointIdx] = 1;
 	bool isNotEnd = 1;
 	while (isNotEnd)
