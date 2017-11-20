@@ -466,7 +466,7 @@ bool PostProgress::IsCrossPont(const Mat & srcImg, Point pt)
 	const uchar* prePtr = srcImg.ptr<uchar>(r-1);
 	const uchar* ptr = srcImg.ptr<uchar>(r);
 	const uchar* nextPtr = srcImg.ptr<uchar>(r+1);
-	if (ptr[c-1]==255 && ptr[c+1]==255 && (prePtr[c]==255 || nextPtr[c]==255 ))//==== - =====
+	if (ptr[c-1] != 0 && ptr[c+1] != 0 && (prePtr[c] != 0 || nextPtr[c] != 0))//==== - =====
 	{
 		return true;
 	}
@@ -482,6 +482,9 @@ bool PostProgress::IsCrossPont(const Mat & srcImg, Point pt)
 	{
 		return true;
 	}
+	//其他模式	==== Y =====
+
+
 	return false;
 }
 
@@ -501,11 +504,9 @@ void PostProgress::RemoveBurr(Mat & srcImg, vector<Point>& vEndPoints, vector<Po
 	for (int i=0;i<vEndPoints.size();i++)
 	{
 		int pNums = 0;
-		
 		vector<Point> vTmpPoints;
 		vTmpPoints.push_back(vEndPoints[i]);
 		isVisited.at<uchar>(vEndPoints[i].y, vEndPoints[i].x) = 1;
-		//Point prevPoint = vEndPoints[i];
 		for (int j=0;j<lengThresh;j++)
 		{
 			pNums++;
@@ -516,84 +517,75 @@ void PostProgress::RemoveBurr(Mat & srcImg, vector<Point>& vEndPoints, vector<Po
 			{
 				break;
 			}
-
 			uchar* prevPtr = srcImg.ptr<uchar>(r-1);
 			uchar* ptr = srcImg.ptr<uchar>(r);
 			uchar* nextPtr = srcImg.ptr<uchar>(r+1);
 			bool bTraced = 0;
-			//if (ptr[c + 1] == 255 && !(r == prevPoint.y && (c + 1) == prevPoint.x))
 			if (ptr[c + 1] == 255 && !isVisited.at<uchar>(r,c+1))
 			{
+				//如果碰到交叉点就结束跟踪
+				if (ptr[c + 1] == 2)
+					break;
 				bTraced = 1;
 				vTmpPoints.push_back(Point(c+1, r));
 				isVisited.at<uchar>(r, c + 1) = 1;
-
-				//prevPoint = Point(c, r);
-				
 			}
-			//else if (prevPtr[c] == 255 && !((r-1) == prevPoint.y && c == prevPoint.x))
 			else if (prevPtr[c] == 255 && !isVisited.at<uchar>(r-1,c))
 			{
+				if (prevPtr[c] == 2)
+					break;
 				bTraced = 1;
 				vTmpPoints.push_back(Point(c, r-1));
 				isVisited.at<uchar>(r - 1, c) = 1;
-				//prevPoint = Point(c, r);
-				
 			}
-			//else if (ptr[c - 1] == 255 && !(r == prevPoint.y && (c - 1) == prevPoint.x))
 			else if (ptr[c - 1] == 255 && !isVisited.at<uchar>(r, c - 1))
 			{
+				if (ptr[c - 1] == 2)
+					break;
 				bTraced = 1;
 				vTmpPoints.push_back(Point(c-1, r));
 				isVisited.at<uchar>(r, c - 1) = 1;
-				//prevPoint = Point(c, r);
-				
 			}
-			//else if (nextPtr[c] == 255 && !((r + 1) == prevPoint.y && c == prevPoint.x))
 			else if (nextPtr[c] == 255 && !isVisited.at<uchar>(r+1,c))
 			{
+				if (nextPtr[c] == 2)
+					break;
 				bTraced = 1;
 				vTmpPoints.push_back(Point(c, r+1));
 				isVisited.at<uchar>(r+1,c) = 1;
-				//prevPoint = Point(c, r);
-				
 			}
 			//========
-			//else if (prevPtr[c + 1] == 255 && !((r-1) == prevPoint.y && (c + 1) == prevPoint.x))
 			else if (prevPtr[c + 1] == 255 && !isVisited.at<uchar>(r-1, c + 1))
 			{
+				if (prevPtr[c + 1] == 2)
+					break;
 				bTraced = 1;
 				vTmpPoints.push_back(Point(c+1, r-1));
 				isVisited.at<uchar>(r - 1, c + 1) = 1;
-				//prevPoint = Point(c, r);
-				
 			}
-			//else if (prevPtr[c - 1] == 255 && !((r - 1) == prevPoint.y && (c - 1) == prevPoint.x))
 			else if (prevPtr[c - 1] == 255 && !isVisited.at<uchar>(r-1,c - 1))
 			{
+				if (prevPtr[c - 1] == 2)
+					break;
 				bTraced = 1;
 				vTmpPoints.push_back(Point(c - 1, r - 1));
 				isVisited.at<uchar>(r - 1, c - 1) = 1;
-				//prevPoint = Point(c, r);
-				
 			}
-			//else if (nextPtr[c - 1] == 255 && !((r + 1) == prevPoint.y && (c - 1) == prevPoint.x))
 			else if (nextPtr[c - 1] == 255 && !isVisited.at<uchar>(r+1,c-1))
 			{
+				if (nextPtr[c - 1] == 2)
+					break;
 				bTraced = 1;
 				vTmpPoints.push_back(Point(c-1, r+1));
 				isVisited.at<uchar>(r + 1, c - 1) = 1;
-				//prevPoint = Point(c, r);
-				
 			}
-			//else if (nextPtr[c + 1] == 255 && !((r + 1) == prevPoint.y && (c + 1) == prevPoint.x))
 			else if (nextPtr[c + 1] == 255 && !isVisited.at<uchar>(r+1, c + 1))
 			{
+				if (nextPtr[c + 1] == 2)
+					break;
 				bTraced = 1;
 				vTmpPoints.push_back(Point(c + 1, r + 1));
 				isVisited.at<uchar>(r + 1, c + 1) = 1;
-				//prevPoint = Point(c, r);
-				
 			}
 			if (!bTraced)
 			{
@@ -608,7 +600,6 @@ void PostProgress::RemoveBurr(Mat & srcImg, vector<Point>& vEndPoints, vector<Po
 				srcImg.at<uchar>(vTmpPoints[k].y, vTmpPoints[k].x) = 0;
 			}
 			delIdx.push_back(i);
-			//vEndPoints.erase(vEndPoints.begin() + i);
 		}
 	 }
 	for (int i = delIdx.size() - 1; i >= 0; i--)

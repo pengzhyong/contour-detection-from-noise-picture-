@@ -3,7 +3,7 @@
 using namespace cv;
 void main()
 {
-	Mat src = imread("pic/kj2.jpg");
+	Mat src = imread("pic/lm.jpg");
 
 	//pyrDown(src, src);
 	//pyrDown(src, src);
@@ -33,22 +33,22 @@ void main()
 	//	imshow("testImg", testImg);
 	//}
 
+	
+	//多次迭代去毛刺
 	PostProgress postPro;
 	vector<Point> vEndPoints;
 	postPro.FindEndPoint(can, vEndPoints);
 	vector<Point> vCrossPoints;
-	int t  = 0;
-	while (t<20)
+	for(int t=0;t<20;t++)
 	{
 		std::cout << "t= " << t << std::endl;
 		vEndPoints.clear();
 		vCrossPoints.clear();
 		postPro.FindEndPoint(can, vEndPoints);
 		postPro.FindCrossPoint(can, vCrossPoints);
-		postPro.RemoveBurr(can, vEndPoints, vCrossPoints, 10);
+		postPro.RemoveBurr(can, vEndPoints, vCrossPoints, 10 + 0.5 * t);
 		imshow("testImg_while", can);
-		waitKey(200);
-		t++; 
+		waitKey(100);
 	}
 
 	//标记端点和交叉点
